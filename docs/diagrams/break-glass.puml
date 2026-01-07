@@ -1,0 +1,33 @@
+@startuml
+skinparam participantPadding 10
+actor EO1 as "Emergency Officer 1"
+actor EO2 as "Emergency Officer 2"
+actor Patient
+participant Gateway
+participant "Chain: Policy/Revocation/Events" as Chain
+participant "Storage" as Storage
+participant "Client (Emergency User)" as Client
+
+== Activate ==
+EO1 -> Chain: submit vote(caseId, reason, policyRef)
+EO2 -> Chain: submit vote(caseId, reason, policyRef)
+Chain --> Gateway: BreakGlassEvent(scope, TTL, caseId, policyRef)
+
+== Issue emergency cap ==
+Gateway -> Gateway: mint cap {breakGlass=true, singleUse, scope, TTL, revHandle, caseId}
+Gateway -> Chain: mark revHandle active
+Gateway --> Client: emergency capability
+Gateway --> Patient: notify activation (channels per policy)
+
+== Access ==
+Client -> Gateway: request + capability + DPoP + device attest
+Gateway -> Chain: check revHandle (must be active)
+Gateway -> Chain: check policyRef/TTL
+Gateway -> Storage: fetch ciphertext by CID
+Gateway -> Gateway: verify anchor; unwrap key
+Gateway --> Client: ciphertext + aad + wrappedKey
+Client -> Client: decrypt + render
+Gateway -> Chain: revoke revHandle (single-use)
+Gateway --> Patient: notify access event (who/when/what)
+Gateway -> Gateway: audit append; later anchor audit root
+@enduml

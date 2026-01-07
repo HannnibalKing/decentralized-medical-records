@@ -1,0 +1,18 @@
+@startuml
+skinparam participantPadding 10
+actor Clinician
+participant Client
+participant Gateway
+participant "Storage (IPFS/Arweave)" as Storage
+participant "Chain: Anchor/Revocation" as Chain
+
+Clinician -> Client: create FHIR resource
+Client -> Client: encrypt (AES-GCM per-resource), produce aad
+Client -> Storage: store ciphertext -> CID
+Client -> Gateway: submit metadata (CID, resourceType, patientDID, hash)
+Gateway -> Chain: anchor integrity hash/Merkle root
+Gateway -> Gateway: issue capability to patient/role scopes (TTL, revHandle)
+Gateway --> Clinician: ack (tx hash, cap handles)
+Gateway -> Gateway: audit log append
+Gateway -> Chain: optional audit root anchor (periodic)
+@enduml

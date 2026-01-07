@@ -1,0 +1,26 @@
+@startuml
+skinparam participantPadding 10
+actor Patient
+participant Gateway
+participant "Chain: Revocation Registry" as Chain
+participant "Authorized Client" as Client
+participant "Storage" as Storage
+
+== Revoke ==
+Patient -> Gateway: revoke(revHandle, reason)
+Gateway -> Chain: set revoked=true, ts, reason
+Chain --> Gateway: confirm
+Gateway --> Patient: ack (tx hash)
+
+== Access enforcement ==
+Client -> Gateway: request + capability
+Gateway -> Chain: check revHandle + exp
+alt revoked/expired
+  Gateway --> Client: deny
+else valid
+  Gateway -> Storage: fetch CID
+  Gateway -> Gateway: verify anchor; unwrap key
+  Gateway --> Client: ciphertext + aad + wrappedKey
+end
+Gateway -> Gateway: audit (decision, revState); anchor periodically
+@enduml

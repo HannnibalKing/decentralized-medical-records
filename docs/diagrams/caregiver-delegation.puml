@@ -1,0 +1,31 @@
+@startuml
+skinparam participantPadding 10
+actor Patient
+actor Caregiver
+participant ClientP as "Patient Client"
+participant ClientC as "Caregiver Client"
+participant Gateway
+participant "Chain: Revocation" as Chain
+participant "Storage" as Storage
+
+== Issue ==
+Patient -> ClientP: open consent dashboard (biometric step-up)
+ClientP -> Gateway: request delegate(cap scope, expiry)
+Gateway -> Gateway: mint capability {aud=CaregiverDID, scope, exp, revHandle, delegationDepth=0}
+Gateway -> Chain: record revHandle active
+Gateway --> ClientP: deliver capability to share
+
+== Use ==
+Caregiver -> ClientC: open record
+ClientC -> Gateway: request + capability + DPoP
+Gateway -> Chain: check revocation/exp
+Gateway -> Storage: fetch CID
+Gateway -> Gateway: verify anchor; unwrap key for caregiver
+Gateway --> ClientC: ciphertext + aad + wrappedKey
+ClientC -> ClientC: decrypt + render
+Gateway -> Gateway: audit (actor=caregiver, subject=patient)
+
+== Auto-expire/Revoke ==
+ClientP -> Gateway: revoke(revHandle) or wait exp
+Gateway -> Chain: set revoked
+@enduml

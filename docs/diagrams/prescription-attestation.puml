@@ -1,0 +1,36 @@
+@startuml
+skinparam participantPadding 10
+actor Prescriber
+actor Pharmacist
+actor Insurer
+participant "Chain: Attestation Registry" as Chain
+participant Gateway
+participant "Storage" as Storage
+participant "Verifier (Pharmacy/Client)" as Verifier
+
+== Issue ==
+Prescriber -> Prescriber: sign MedicationRequest (sig_P)
+Prescriber -> Storage: store ciphertext -> CID_MR
+Prescriber -> Chain: anchor hash(CID_MR), sig_P ref (status=ISSUED)
+
+== Dispense ==
+Pharmacist -> Chain: fetch anchor/sig_P, verify
+Pharmacist -> Pharmacist: sign MedicationDispense (sig_Ph)
+Pharmacist -> Storage: store -> CID_MD
+Pharmacist -> Chain: update attestation (attach sig_Ph, status=DISPENSED)
+
+== Coverage (optional) ==
+Insurer -> Chain: verify prior sigs
+Insurer -> Insurer: sign coverage (sig_I)
+Insurer -> Chain: update attestation (sig_I, status=APPROVED)
+
+== Aggregate ==
+Chain -> Chain: aggregate sigs (BLS or hash set) -> aggSig
+Chain: record {CID_MR, CID_MD, aggSig, status}
+
+== Verify ==
+Verifier -> Chain: get attestation {aggSig/sig set, status}
+Verifier -> Storage: fetch CID_MR/CID_MD ciphertexts
+Verifier -> Verifier: verify sigs vs on-chain hashes
+Verifier -> Verifier: decrypt + render
+@enduml

@@ -1,0 +1,27 @@
+@startuml
+skinparam participantPadding 10
+actor User
+participant Client
+participant Gateway
+participant "Chain: Revocation/Anchor" as Chain
+participant "Device Attestation" as Attest
+participant "Storage (IPFS/Arweave)" as Storage
+
+User -> Client: initiate read(resourceId)
+Client -> Gateway: request + capability + DPoP proof
+Gateway -> Gateway: verify cap sig, nbf/exp, audience, purpose
+Gateway -> Chain: check revocation(revHandle)
+Gateway -> Attest: verify device attestation (nonce, cert)
+Gateway -> Gateway: verify DPoP (bind to TLS key, nonce)
+alt revoked/expired/attest fail
+  Gateway --> Client: deny
+else valid
+  Gateway -> Storage: fetch ciphertext by CID
+  Gateway -> Gateway: verify on-chain hash/Merkle root
+  Gateway -> Gateway: unwrap key (HPKE) for Client
+  Gateway --> Client: ciphertext + aad + wrappedKey
+  Client -> Client: decrypt + render
+  Gateway -> Gateway: append audit (hash-chain)
+  Gateway -> Chain: anchor audit root (periodic/async)
+end
+@enduml

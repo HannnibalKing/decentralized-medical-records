@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: Gateway API
+  version: 0.1.0
+servers:
+  - url: https://gateway.example.com
+paths:
+  /v1/validate-capability:
+    post:
+      summary: Validate capability token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                dpop:
+                  type: string
+                rev_handle:
+                  type: string
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  rev_state:
+                    type: string
+                  exp:
+                    type: integer
+                  scope:
+                    type: string
+                  policy:
+                    type: string
+                  reason:
+                    type: string
+  /v1/fetch-record:
+    post:
+      summary: Fetch encrypted record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                dpop:
+                  type: string
+                cid:
+                  type: string
+                rev_handle:
+                  type: string
+                arweave_tx:
+                  type: string
+      responses:
+        '200':
+          description: Encrypted record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ciphertext:
+                    type: string
+                    format: byte
+                  aad:
+                    type: string
+                    format: byte
+                  wrapped_key:
+                    type: string
+                    format: byte
+                  cid:
+                    type: string
+  /v1/breakglass/activate:
+    post:
+      summary: Activate emergency access
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                case_id:
+                  type: string
+                policy_ref:
+                  type: string
+                officer_signatures:
+                  type: array
+                  items:
+                    type: string
+                    format: byte
+      responses:
+        '200':
+          description: Emergency capability issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  capability:
+                    type: string
+                  rev_handle:
+                    type: string
+                  ttl_seconds:
+                    type: integer
+  /v1/revoke:
+    post:
+      summary: Revoke a capability handle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rev_handle:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Revocation recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tx_hash:
+                    type: string
+  /v1/attestations/{cid_mr}:
+    get:
+      summary: Get prescription attestation
+      parameters:
+        - in: path
+          name: cid_mr
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attestation record
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cid_md:
+                    type: string
+                  agg_sig:
+                    type: string
+                  status:
+                    type: string
+                  ts:
+                    type: integer

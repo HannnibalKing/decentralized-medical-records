@@ -1,0 +1,29 @@
+@startuml
+skinparam participantPadding 10
+actor User
+participant Client
+participant "Hospital A Source" as HospA
+participant "Hospital B Source" as HospB
+participant Gateway
+participant "Storage" as Storage
+participant "Chain: Anchor/Attest" as Chain
+
+== Fetch & compare ==
+User -> Client: open reconciliation view(resource type)
+Client -> HospA: fetch CID_A + attest
+Client -> HospB: fetch CID_B + attest
+Client -> Client: verify signatures/anchors; decrypt
+Client -> Client: diff resources; mark conflicts; show provenance chips
+
+== Resolve ==
+User -> Client: choose resolution (A, B, or merge)
+Client -> Client: produce merged resource; encrypt -> CID_M
+Client -> Gateway: submit merge metadata (sources, mergeOps, CID_M, patientDID)
+Gateway -> Chain: anchor CID_M hash/Merkle; record provenance (CID_A, CID_B, resolver DID)
+
+== Publish ==
+Gateway -> Storage: pin merged ciphertext (if not already)
+Gateway -> Gateway: emit audit (reconciliation, sources, resolver)
+Chain: updated anchor now authoritative pointer
+Client -> Client: refresh view with merged record
+@enduml

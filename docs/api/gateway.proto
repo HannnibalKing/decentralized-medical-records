@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package gateway.v1;
+
+option go_package = "github.com/example/med/gateway/gen;gen";
+
+message Capability {
+  string token = 1; // JWT/CWT serialized capability
+  string dpop = 2;  // DPoP proof JWT
+  string rev_handle = 3; // revocation handle to check
+}
+
+message ValidateCapabilityRequest {
+  Capability capability = 1;
+}
+
+message ValidateCapabilityResponse {
+  bool valid = 1;
+  string rev_state = 2; // active|revoked|expired
+  int64 exp = 3;
+  string scope = 4;
+  string policy = 5;
+  string reason = 6;
+}
+
+message FetchRecordRequest {
+  Capability capability = 1;
+  string cid = 2;
+}
+
+message FetchRecordResponse {
+  bytes ciphertext = 1;
+  bytes aad = 2;
+  bytes wrapped_key = 3;
+  string cid = 4;
+}
+
+message BreakGlassActivateRequest {
+  string case_id = 1;
+  string policy_ref = 2;
+  repeated bytes officer_signatures = 3;
+}
+
+message BreakGlassActivateResponse {
+  string capability = 1;
+  string rev_handle = 2;
+  int64 ttl_seconds = 3;
+}
+
+message RevokeRequest {
+  string rev_handle = 1;
+  string reason = 2;
+}
+
+message RevokeResponse {
+  string tx_hash = 1;
+}
+
+message GetAttestationRequest {
+  string cid_mr = 1;
+}
+
+message GetAttestationResponse {
+  string cid_md = 1;
+  string agg_sig = 2;
+  string status = 3;
+  int64 ts = 4;
+}
+
+service Gateway {
+  rpc ValidateCapability(ValidateCapabilityRequest) returns (ValidateCapabilityResponse);
+  rpc FetchRecord(FetchRecordRequest) returns (FetchRecordResponse);
+  rpc BreakGlassActivate(BreakGlassActivateRequest) returns (BreakGlassActivateResponse);
+  rpc Revoke(RevokeRequest) returns (RevokeResponse);
+  rpc GetAttestation(GetAttestationRequest) returns (GetAttestationResponse);
+}

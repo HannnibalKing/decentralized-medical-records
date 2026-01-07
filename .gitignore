@@ -1,0 +1,23 @@
+# Node / Vite
+web/node_modules/
+web/dist/
+web/.vite/
+web/.env
+web/.env.*
+
+# Go
+gateway/bin/
+**/*.exe
+**/*.test
+
+# Proto gen (optional)
+gateway/gen/
+
+# Foundry / Solidity
+contracts/out/
+contracts/cache/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
