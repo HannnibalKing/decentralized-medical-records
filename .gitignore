@@ -16,6 +16,8 @@ gateway/gen/
 # Foundry / Solidity
 contracts/out/
 contracts/cache/
+cache/
+out/
 
 # OS/editor
 .DS_Store
